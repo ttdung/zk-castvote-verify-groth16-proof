@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Check Vote</title>
+  <style>
+    body { font-family: sans-serif; margin: 24px; }
+    textarea, input { width: 100%; }
+    label { display: block; margin-top: 12px; font-weight: 600; }
+    button { margin-top: 16px; padding: 8px 12px; }
+    pre { background: #f6f8fa; padding: 12px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>Check Vote</h1>
+
+  <label>Seal (hex)
+    <textarea id="seal" rows="4"></textarea>
+  </label>
+
+  <label>Journal (hex)
+    <textarea id="journal" rows="4"></textarea>
+  </label>
+
+  <label>Journal ABI (hex)
+    <textarea id="journalAbi" rows="3"></textarea>
+  </label>
+
+  <label>Image ID (hex, 32 bytes)
+    <input id="imageId" />
+  </label>
+
+  <label>Nullifier
+    <input id="nullifier" value="0x0000000000000000000000000000000000000000000000000000000000000000" />
+  </label>
+
+  <label>Age
+    <input id="age" type="number" value="35" />
+  </label>
+
+  <label>Is Student
+    <input id="isStudent" type="checkbox" />
+  </label>
+
+  <label>Poll ID
+    <input id="pollId" type="number" value="0" />
+  </label>
+
+  <label>Option A
+    <input id="optionA" type="number" value="1" />
+  </label>
+
+  <label>Option B
+    <input id="optionB" type="number" value="0" />
+  </label>
+
+  <button id="submitBtn">Submit</button>
+
+  <h2>Response</h2>
+  <pre id="output">—</pre>
+
+  <script>
+    // Prefill with your known working sample
+    document.getElementById('seal').value =
+      '73c457ba10a3ca651f6d58af20241ac344ae75a4c85d29db862ecf36d8f419a16d2efd711c8f382af116509c9f334f622ebc206f8c8254d8529ec8cf12a598b6b7a3f9eb0f1eef2699d7079614efbef31d95cae4793909ef4ea90b74bfc7759a170cae7d2327c229d5e4f94c94f5c4de2371c9d26c93b682d2502ed86c10f9403af3c2092b621cdd802d4bf42a9e0f3db98c243743c11b9e2fe3f4bd7c44a48545b3feff2cf26b2ca7eca2b5b3777ce21b50b9b6f20e2b546914ca5f7ebfee50c3d0c4a7132368a23f4155e5a7aec6abcd61e3a26a3722c6f31e19adfb582ba2d081d00e0137d0aefefe6b68c7630d4f4564517cf151f5b2d57a42042051337250499738';
+    document.getElementById('journal').value =
+      '000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000654000000000000000396139646530323734333434313164353865353235353264643362663731633262373562323735303332363332393339363237616664383565343031306238341e00000001e90300000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000';
+    document.getElementById('journalAbi').value =
+      '4000000000000000396139646530323734333434313164353865353235353264643362663731633262373562323735303332363332393339363237616664383565343031306238341e00000001e90300000000000000000000000000000100000000000000';
+    document.getElementById('imageId').value =
+      '43706d1c05d8ab2375026a165aca9e5d2cf2123ff77a40438580c47e6f968861';
+
+    document.getElementById('submitBtn').addEventListener('click', async () => {
+      const payload = {
+        seal: document.getElementById('seal').value.trim(),
+        journal: document.getElementById('journal').value.trim(),
+        journal_abi: document.getElementById('journalAbi').value.trim(),
+        image_id: document.getElementById('imageId').value.trim(),
+        nullifier: document.getElementById('nullifier').value.trim(),
+        age: Number(document.getElementById('age').value),
+        is_student: document.getElementById('isStudent').checked,
+        poll_id: Number(document.getElementById('pollId').value),
+        option_a: Number(document.getElementById('optionA').value),
+        option_b: Number(document.getElementById('optionB').value),
+      };
+
+      const out = document.getElementById('output');
+      out.textContent = 'Requesting...';
+
+      try {
+        const res = await fetch('http://localhost:8080/checkvote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        out.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        out.textContent = 'Error: ' + (err && err.message ? err.message : String(err));
+      }
+    });
+  </script>
+</body>
+</html>

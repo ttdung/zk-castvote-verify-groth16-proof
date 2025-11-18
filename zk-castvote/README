@@ -1,0 +1,13 @@
+# this project is to verify the groth16 proof.
+
+# to run golang backend
+go run main.go
+
+cd /Users/mmtvt/src/anonymous_voting/zk-castvote/web
+
+python3 -m http.server 8000
+
+# to run python backend
+
+cd python
+follow README.md
