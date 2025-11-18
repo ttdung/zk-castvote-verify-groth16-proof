@@ -1,4 +1,5 @@
 # this project is to verify the groth16 proof.
+# in golang and in python
 
 # to run golang backend
 go run main.go
