@@ -46,14 +46,6 @@
     <input id="pollId" type="number" value="0" />
   </label>
 
-  <label>Option A
-    <input id="optionA" type="number" value="1" />
-  </label>
-
-  <label>Option B
-    <input id="optionB" type="number" value="0" />
-  </label>
-
   <button id="submitBtn">Submit</button>
 
   <h2>Response</h2>
@@ -80,8 +72,6 @@
         age: Number(document.getElementById('age').value),
         is_student: document.getElementById('isStudent').checked,
         poll_id: Number(document.getElementById('pollId').value),
-        option_a: Number(document.getElementById('optionA').value),
-        option_b: Number(document.getElementById('optionB').value),
       };
 
       const out = document.getElementById('output');

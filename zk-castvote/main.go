@@ -17,8 +17,6 @@ type VoteRequest struct {
 	Age       uint32 `json:"age"`
 	IsStudent bool `json:"is_student"`
 	PollID    uint64 `json:"poll_id"`
-	OptionA   uint64 `json:"option_a"`
-	OptionB   uint64 `json:"option_b"`
 }
 
 // album represents data about a record album.

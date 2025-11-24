@@ -14,8 +14,6 @@ class VoteResponse:
     age: int
     is_student: bool
     poll_id: int
-    option_a: int
-    option_b: int
 
 
 @dataclass
@@ -28,9 +26,6 @@ class VoteRequest:
     age: int
     is_student: bool
     poll_id: int
-    option_a: int
-    option_b: int
-
 
 def my_sha256(input_bytes: bytes) -> bytes:
     """Calculate SHA-256 hash."""
@@ -63,81 +58,83 @@ def decode_bincode_vote(data: bytes) -> VoteResponse:
     poll_id = struct.unpack('<Q', data[offset:offset+8])[0]
     offset += 8
     
-    # Read option_a (u64, little-endian)
-    option_a = struct.unpack('<Q', data[offset:offset+8])[0]
-    offset += 8
-    
-    # Read option_b (u64, little-endian)
-    option_b = struct.unpack('<Q', data[offset:offset+8])[0]
-    
     return VoteResponse(
         nullifier=nullifier,
         age=age,
         is_student=is_student,
         poll_id=poll_id,
-        option_a=option_a,
-        option_b=option_b,
     )
 
 
 def check_vote(vote: VoteRequest) -> VoteResponse:
-    """Check and verify a vote."""
-    # Decode image ID
+    """Check and verify a vote (optimized)."""
+    # Preconvert common hex fields once
     try:
-        image_id_bytes = bytes.fromhex(vote.image_id)
-        if len(image_id_bytes) != 32:
-            raise ValueError(f"Invalid image_id length: {len(image_id_bytes)}")
-        image_id = image_id_bytes
+        image_id = bytes.fromhex(vote.image_id)
+        if len(image_id) != 32:
+            raise ValueError(f"Invalid image_id length: {len(image_id)}")
     except Exception as e:
         raise ValueError(f"Failed to decode imageID: {e}")
-    
-    # Decode journal
+
     try:
         journal_bytes = bytes.fromhex(vote.journal)
     except Exception as e:
         raise ValueError(f"Failed to decode journal: {e}")
-    
-    journal_digest = my_sha256(journal_bytes)
+
+    # SHA256 digest of journal
+    journal_digest = hashlib.sha256(journal_bytes).digest()
     claim_digest = calculate_claim_digest(image_id, journal_digest)
-    
     print(f"claimDigest: {claim_digest.hex()}")
-    
-    # Decode seal
+
+    # Decode seal once
     try:
         seal_bytes = bytes.fromhex(vote.seal)
     except Exception as e:
         raise ValueError(f"Failed to decode seal: {e}")
-    
-    # Get verifier parameters from selector (first 4 bytes of seal)
+
+    if len(seal_bytes) < 4:
+        raise ValueError("Seal too short to contain selector")
+
     selector = seal_bytes[:4]
     params = get_verifier_parameters2(selector)
     if params is None:
         raise ValueError("GetVerifierParameters2 failed")
-    
-    # Verify integrity
-    proof_seal = seal_bytes[4:]  # Skip selector
+
+    # Verify integrity (skip selector in proof)
+    proof_seal = seal_bytes[4:]
+
+    # Python Groth16 verification is expensive
+    # Avoid printing or any intermediate object creation inside verify_integrity
     try:
         verify_integrity(params, proof_seal, claim_digest)
-        print("verify OK!")
+        # print("verify OK!")  # Remove prints for performance
     except Exception as e:
-        import traceback
-        error_msg = str(e) if str(e) else repr(e)
-        print(f"Verification error: {error_msg}")
-        print(traceback.format_exc())
-        raise ValueError(f"Verification failed: {error_msg}")
-    
-    # Decode journal ABI
-    try:
-        data = bytes.fromhex(vote.journal_abi)
-    except Exception as e:
-        raise ValueError(f"Failed to decode hex string: {e}")
-    
-    vote_response = decode_bincode_vote(data)
-    print(f"Decoded Vote: {vote_response}")
-    print(f"Poll ID: {vote.poll_id}")
-    
-    return vote_response
+        raise ValueError(f"Verification failed: {e}")
 
+    # Decode journal ABI (bincode)
+    try:
+        journal_data = bytes.fromhex(vote.journal_abi)
+    except Exception as e:
+        raise ValueError(f"Failed to decode journal_abi: {e}")
+
+    # Minimal bincode decoding (avoid unnecessary unpacking)
+    offset = 0
+    str_len = struct.unpack_from('<Q', journal_data, offset)[0]
+    offset += 8
+    nullifier = journal_data[offset:offset+str_len].decode('utf-8')
+    offset += str_len
+    age = struct.unpack_from('<I', journal_data, offset)[0]
+    offset += 4
+    is_student = struct.unpack_from('<B', journal_data, offset)[0] != 0
+    offset += 1
+    poll_id = struct.unpack_from('<Q', journal_data, offset)[0]
+
+    return VoteResponse(
+        nullifier=nullifier,
+        age=age,
+        is_student=is_student,
+        poll_id=poll_id,
+    )
 
 def verify_encrypted_data_integrity(journal: str, ciphertext: str, aad: str) -> bool:
     """Verify encrypted data integrity."""

@@ -35,8 +35,6 @@ class VoteRequest(BaseModel):
     age: int
     is_student: bool
     poll_id: int
-    option_a: int
-    option_b: int
 
 
 @app.get("/albums")
@@ -70,8 +68,6 @@ async def checkvote_endpoint(vote_request: VoteRequest):
             age=vote_request.age,
             is_student=vote_request.is_student,
             poll_id=vote_request.poll_id,
-            option_a=vote_request.option_a,
-            option_b=vote_request.option_b,
         )
         result = check_vote(vote_model)
         # Convert dataclass to dict for JSON serialization
@@ -80,8 +76,6 @@ async def checkvote_endpoint(vote_request: VoteRequest):
             "age": result.age,
             "is_student": result.is_student,
             "poll_id": result.poll_id,
-            "option_a": result.option_a,
-            "option_b": result.option_b,
         }
         return {"status": "success", "result": result_dict}
     except Exception as e:

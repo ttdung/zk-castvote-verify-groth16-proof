@@ -20,8 +20,6 @@ type VoteResponse struct {
 	Age       uint32
 	IsStudent bool
 	PollID    uint64
-	OptionA   uint64
-	OptionB   uint64
 }
 
 type VoteRequest struct {
@@ -33,8 +31,6 @@ type VoteRequest struct {
 	Age       uint32 `json:"age"`
 	IsStudent bool `json:"is_student"`
 	PollID    uint64 `json:"poll_id"`
-	OptionA   uint64 `json:"option_a"`
-	OptionB   uint64 `json:"option_b"`
 }
 
 func decodeBincodeVote(data []byte) (*VoteResponse, error) {
@@ -67,23 +63,11 @@ func decodeBincodeVote(data []byte) (*VoteResponse, error) {
 		return nil, err
 	}
 
-	var optionA uint64
-	if err := binary.Read(buf, binary.LittleEndian, &optionA); err != nil {
-		return nil, err
-	}
-
-	var optionB uint64
-	if err := binary.Read(buf, binary.LittleEndian, &optionB); err != nil {
-		return nil, err
-	}
-
 	return &VoteResponse{
 		Nullifier: nullifier,
 		Age:       age,
 		IsStudent: isStudent != 0,
 		PollID:    pollID,
-		OptionA:   optionA,
-		OptionB:   optionB,
 	}, nil
 
 }
